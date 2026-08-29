@@ -1,7 +1,10 @@
 ## 📖 Présentation du projet:
 Ce projet propose un agent IA tuteur de Python, intégré sous forme de widget de chat directement dans Reeborg's World, un jeu éducatif open source où l'élève programme un robot en Python (déplacements, boucles, conditions) pour résoudre des labyrinthes.
+
 L'élève joue, écrit du code Python dans l'éditeur du jeu, et peut demander de l'aide au tuteur IA en temps réel via un chat superposé à l'interface du jeu. L'agent comprend la nature de la demande (question de cours, debug de code, demande d'indice, suivi de progression) et choisit automatiquement le bon outil pour y répondre, via une architecture n8n orchestrant un LLM, un système RAG, plusieurs services externes, une API d'exécution de code et un outil de web scraping.
+
 Toutes les briques du workflow ont été testées et validées en conditions réelles directement depuis Reeborg's World, via un widget de chat injecté dans l'interface du jeu.
+
 Ce projet a été réalisé dans le cadre d'une formation réalisée au sein de l'Orange Digital Center, visant à démontrer l'orchestration d'IA, de données, d'APIs et de services tiers au sein d'un seul système automatisé avec n8n.
 
 ## 🧩 Points techniques utilisés :
