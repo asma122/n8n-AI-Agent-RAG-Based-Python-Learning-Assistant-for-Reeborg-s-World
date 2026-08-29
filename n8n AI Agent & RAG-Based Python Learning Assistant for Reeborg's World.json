@@ -1,0 +1,754 @@
+{
+  "name": "n8n AI Agent & RAG-Based Python Learning Assistant for Reeborg's World",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -528,
+        -240
+      ],
+      "id": "02653a2c-e04e-4d56-a051-fa44f98cf2ce",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        672,
+        0
+      ],
+      "id": "335fcece-fcf5-49a4-a024-93360da7b77f",
+      "name": "base vectorielle:Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "0w2G8tVtKlfHI5f9",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "nomic-embed-text:latest"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [
+        608,
+        224
+      ],
+      "id": "cb2b9aac-f9de-43db-83c7-02f3edf38ff2",
+      "name": "Embedding : Embeddings Ollama",
+      "credentials": {
+        "ollamaApi": {
+          "id": "WM7Q0TFgjPrWex9Z",
+          "name": "Ollama account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        816,
+        208
+      ],
+      "id": "383cfd15-63fa-44e2-9898-758ab6545bc7",
+      "name": "chunking : Default Data Loader"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Recherche dans la base de connaissance pédagogique Python (cours, erreurs courantes, exercices, glossaire) pour répondre aux questions de l'élève sur le langage Python. Utilise cet outil quand l'élève pose une question de cours (ex. \"c'est quoi une liste ?\", \"comment fonctionne une boucle for ?\"), demande une explication d'un concept, ou a besoin d'un indice basé sur la théorie du niveau en cours. Ne pas utiliser pour exécuter ou tester du code — utilise l'outil d'exécution de code pour cela.",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        768,
+        640
+      ],
+      "id": "a9774528-05fe-4144-95a2-aa024f8c6c77",
+      "name": "Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "0w2G8tVtKlfHI5f9",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        448,
+        0
+      ],
+      "id": "d0dfd6c7-f9c2-4c86-b0e3-841942f266d0",
+      "name": "Extraction :Extraction des information a partir du document(pdf)"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://mcp.firecrawl.dev/v2/mcp-oauth",
+        "authentication": "bearerAuth",
+        "include": "selected",
+        "includeTools": [
+          "firecrawl_scrape",
+          "firecrawl_crawl"
+        ],
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.4,
+      "position": [
+        528,
+        -160
+      ],
+      "id": "d9dce171-6a10-45bf-aeb8-640a12bced80",
+      "name": "MCP Client",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "N9B3QrFqt1SSw1lK",
+          "name": "Bearer Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "Crawl the following Python documentation websites to collect educational content about Python fundamentals (variables, loops, functions, data structures, error handling):\n- https://docs.python.org/3/tutorial/\n- https://www.w3schools.com/python/\n- https://realpython.com/\n\nFor each site, limit the crawl to a maximum of 10 pages focused on beginner-level tutorial content. Return the scraped content in clean markdown format, including the source URL for each page.",
+        "options": {
+          "systemMessage": "You are a content ingestion agent for an educational Python knowledge base.\n\nYour role is to collect educational Python content from websites using the available Firecrawl tool through MCP.\n\nYou have access to a Firecrawl tool through MCP.\n\nWhen the user asks you to scrape or crawl a website, you MUST use the available Firecrawl tool instead of answering from your own knowledge.\n\nYour task is to crawl the following websites:\n\n- https://docs.python.org/3/tutorial/\n- https://www.w3schools.com/python/\n- https://realpython.com/\n\nFocus only on beginner-level Python educational content, especially:\n\n- Variables\n- Loops\n- Functions\n- Data structures\n- Error handling\n\nLimit the crawl to a maximum of 10 pages per website.\n\nIgnore irrelevant content such as:\n\n- Advertisements\n- Navigation menus\n- Changelogs\n- Internal or advanced API documentation\n- Other non-educational content\n\nReturn the collected content as clean Markdown.\n\nFor every page, always preserve its original source URL for traceability.\n\nDo not answer the user's request from your own knowledge. Use the available Firecrawl tool whenever web content needs to be retrieved.\n\nAfter retrieving the content, return the collected content so that the following workflow nodes can process it:\n\n1. Text splitting / chunking\n2. Embedding generation\n3. Supabase Vector Store insertion\n\nDo not perform the chunking or embedding yourself. The downstream n8n nodes will handle these operations."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        240,
+        -336
+      ],
+      "id": "10c6675e-8fbc-4c0c-a4f0-791090d13c56",
+      "name": "Crawler Agent"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9602b7cd-b728-4961-9927-67a3555a656b",
+              "name": "text",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        640,
+        -336
+      ],
+      "id": "f24e0d7c-c04c-4441-9713-c31f6f915b7d",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.message }}",
+        "options": {
+          "systemMessage": "Tu es un tuteur IA de Python intégré dans Reeborg's World, un jeu éducatif où l'élève programme un robot pour résoudre des labyrinthes en utilisant du vrai code Python (move(), turn_left(), turn_right(), boucles, conditions comme wall_in_front() ou front_is_clear()).\n\nTon rôle est de comprendre la demande de l'élève et de choisir le bon outil pour y répondre. Tu as accès à 4 outils :\n\n1. Recherche dans la base de cours Python (RAG) : utilise-le pour toute question de cours, définition, ou explication de concept (ex. \"c'est quoi une boucle for ?\", \"pourquoi j'ai une IndentationError ?\").\n\n2. Exécution de code (Wandbox API) : utilise-le quand l'élève demande de vérifier, tester ou déboguer un code précis qu'il a écrit. Exécute réellement son code pour voir le résultat ou l'erreur avant de répondre.\n\n3. Suivi de progression (Google Sheets) : utilise-le quand l'élève demande où il en est, son score, ou pour enregistrer une tentative ou un niveau terminé.\n\n4. Crawl/Scrape web (Firecrawl) : utilise firecrawl_scrape pour une seule page, ou firecrawl_crawl pour explorer plusieurs pages d'un site, quand l'élève te demande explicitement de crawler/scraper un site ou une URL précise, ou de récupérer du contenu web externe.\n\n5. Rapport par email (Gmail) : utilise cet outil pour envoyer un email au parent/enseignant uniquement quand l'élève indique avoir terminé un niveau. Demande l'adresse email si elle n'a pas déjà été fournie dans la conversation.\n\nRègles de pédagogie à respecter strictement :\n- Ne donne JAMAIS directement la solution complète d'un exercice ou d'un niveau du jeu.\n- Donne des indices progressifs : commence par une piste générale, puis précise-toi seulement si l'élève insiste ou reste bloqué.\n- Explique le \"pourquoi\" derrière une erreur plutôt que de juste corriger le code à sa place.\n- Adapte ton niveau de langage à un élève débutant en programmation : évite le jargon technique non expliqué.\n- Sois encourageant et bienveillant, jamais condescendant.\n- Réponds toujours en français , de façon claire et concise (quelques phrases maximum, pas de pavé).\n\nSi la demande de l'élève ne correspond à aucun outil (ex. simple salutation, question hors-sujet), réponds directement sans utiliser d'outil.\nTon rôle est de comprendre la demande de l'élève et de choisir le bon outil pour y répondre. Tu as accès à 3 outils :\n\n1. Recherche dans la base de cours Python (RAG) : utilise-le pour toute question de cours, définition, ou explication de concept (ex. \"c'est quoi une boucle for ?\", \"pourquoi j'ai une IndentationError ?\").\n\n2. Exécution de code (Wandbox API) : utilise-le quand l'élève demande de vérifier, tester ou déboguer un code précis qu'il a écrit. Exécute réellement son code pour voir le résultat ou l'erreur avant de répondre.\n\n3. Suivi de progression (Google Sheets) : utilise-le quand l'élève demande où il en est, son score, ou pour enregistrer une tentative ou un niveau terminé.\n\nRègles de pédagogie à respecter strictement :\n- Ne donne JAMAIS directement la solution complète d'un exercice ou d'un niveau du jeu.\n- Donne des indices progressifs : commence par une piste générale, puis précise-toi seulement si l'élève insiste ou reste bloqué.\n- Explique le \"pourquoi\" derrière une erreur plutôt que de juste corriger le code à sa place.\n- Adapte ton niveau de langage à un élève débutant en programmation : évite le jargon technique non expliqué.\n- Sois encourageant et bienveillant, jamais condescendant.\n- Réponds toujours en français, de façon claire et concise (quelques phrases maximum, pas de pavé).\n\nSi la demande de l'élève ne correspond à aucun outil (ex. simple salutation, question hors-sujet), réponds directement sans utiliser d'outil."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        336,
+        432
+      ],
+      "id": "926c9fd6-6ee9-4e56-8796-61731fe047a0",
+      "name": "AI Agent (tuteur)"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Envoie un email de rapport de progression à l'enseignant ou au parent quand l'élève termine un niveau important. Utilise cet outil uniquement quand un niveau est marqué comme terminé, pas pour de simples questions de cours.",
+        "sendTo": "={{ $fromAI('To', `adresse email du parent ou enseignant`, 'string') }}",
+        "subject": "={{ $fromAI('sujet', 'objet de l\\'email, ex: Progression de votre enfant en Python') }}",
+        "emailType": "text",
+        "message": "={{ $fromAI('message', 'corps du message décrivant la progression de l\\'élève : niveau atteint, score, encouragements') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        384,
+        672
+      ],
+      "id": "30aaca6d-7bab-4f33-9c14-e2336be4954e",
+      "name": "Rapport : Gmail",
+      "webhookId": "7c5a1f20-ba14-4ac8-915b-598031bb0464",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "0QrgT3P5e5n8n6pm",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Lit ou met à jour la progression et le score de l'élève dans un tableau Google Sheets. Utilise cet outil quand l'élève demande où il en est, son score actuel, ou pour enregistrer une tentative ou un niveau terminé.",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1zlCkurvNOTM2q3fbUyZH6rkJLI-_pPqNQiuZ7HNTeNg",
+          "mode": "list",
+          "cachedResultName": "google sheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1zlCkurvNOTM2q3fbUyZH6rkJLI-_pPqNQiuZ7HNTeNg/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Feuille 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1zlCkurvNOTM2q3fbUyZH6rkJLI-_pPqNQiuZ7HNTeNg/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "eleve_id": "={{ $fromAI('eleve_id', 'identifiant unique de l\\'élève') }}",
+            "niveau": "={{ $fromAI('niveau', 'niveau atteint dans le jeu') }}",
+            "score": "={{$fromAI('score', 'score obtenu par l\\'élève') }}",
+            "date": "={{ $now.toISO() }}"
+          },
+          "matchingColumns": [
+            "eleve_id"
+          ],
+          "schema": [
+            {
+              "id": "eleve_id",
+              "displayName": "eleve_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "niveau",
+              "displayName": "niveau",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "score",
+              "displayName": "score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        560,
+        720
+      ],
+      "id": "dfd7325a-1968-45f5-b726-81181f1b5688",
+      "name": "Progression : Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "twdrErQHhlIst72N",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Exécute le code Python soumis par l'élève et retourne le résultat réel ou l'erreur produite (compilation ou exécution). Utilise cet outil quand l'élève demande de vérifier, tester, exécuter ou déboguer un code précis qu'il a écrit. Ne pas utiliser pour des questions théoriques — utilise la base de cours pour cela.",
+        "method": "POST",
+        "url": "https://wandbox.org/api/compile.json",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "code",
+              "value": "={{ $fromAI('code', 'le code Python complet à exécuter') }}"
+            },
+            {
+              "name": "compiler",
+              "value": "cpython-3.12.7"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.5,
+      "position": [
+        656,
+        688
+      ],
+      "id": "840a1ca6-3056-4ceb-b1dd-9f78010a60c3",
+      "name": "HTTP Request: api Wandbox"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-20b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        240,
+        640
+      ],
+      "id": "a5ef396d-a3cb-438c-ae8b-886fdb405c6b",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "clu0KcmZyClnMXbY",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-20b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        208,
+        -128
+      ],
+      "id": "3f2907cc-0a9a-4c7e-9a8d-0d5d9a6c9a01",
+      "name": "Groq Chat Model1",
+      "credentials": {
+        "groqApi": {
+          "id": "clu0KcmZyClnMXbY",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/drive/v3/files",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "parents='1htDWsf8nhtFlvUz-6QItT4-0Df-nhTeL'"
+            },
+            {
+              "name": "fields",
+              "value": "files(id, name, mimeType)"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -272,
+        -144
+      ],
+      "id": "43963190-da91-410f-bcff-04910e00b99b",
+      "name": "HTTP Request",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "veCMZNW1efg0YRav",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "files",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        -144
+      ],
+      "id": "773349ae-d5f3-4729-8f42-228eaf72eb9a",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        0,
+        16
+      ],
+      "id": "b7b73134-3ad1-48dc-a50d-bf49c771b34c",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {
+          "binaryPropertyName": "data"
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        224,
+        16
+      ],
+      "id": "21735707-8b1e-479d-85bc-672d7ad90380",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "veCMZNW1efg0YRav",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "reeborg-tutor",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        64,
+        432
+      ],
+      "id": "df0efa99-48eb-4392-bb4f-d368fabaa81a",
+      "name": "Webhook",
+      "webhookId": "b8cef2ac-143b-4224-8c15-46966e46322f"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"output\": $json.output } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        704,
+        432
+      ],
+      "id": "bd0bfef6-f873-4010-9f19-7861f0f67e38",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Crawler Agent",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embedding : Embeddings Ollama": {
+      "ai_embedding": [
+        [
+          {
+            "node": "base vectorielle:Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          },
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "chunking : Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "base vectorielle:Supabase Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent (tuteur)",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraction :Extraction des information a partir du document(pdf)": {
+      "main": [
+        [
+          {
+            "node": "base vectorielle:Supabase Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Client": {
+      "ai_tool": [
+        [
+          {
+            "node": "Crawler Agent",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "AI Agent (tuteur)",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crawler Agent": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "base vectorielle:Supabase Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent (tuteur)": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rapport : Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent (tuteur)",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Progression : Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent (tuteur)",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request: api Wandbox": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent (tuteur)",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent (tuteur)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Crawler Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extraction :Extraction des information a partir du document(pdf)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent (tuteur)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "23686d84-b030-4eb9-89fd-c90e8cee941b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8f390398c043e2e86d0c0478cb1707e85a65c8ba5b9300b95bf6e3ec6fd90183"
+  },
+  "nodeGroups": [],
+  "id": "mUsHm79HKh6AV110",
+  "tags": []
+}
