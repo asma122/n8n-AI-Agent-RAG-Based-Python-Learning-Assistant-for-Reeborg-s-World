@@ -29,7 +29,7 @@ Ce projet a été réalisé dans le cadre d'une formation réalisée au sein de 
 ## 🎥 Démonstration :
 Une vidéo de démonstration complète est disponible ici :
 
-#[![Voir la démo](lien-vers-une-image-miniature.png)](https://drive.google.com/file/d/1imfk4rt4rfbUGRRtQblNCGTsbFMe0tCM/view?usp=sharing)
+<!-- [![Voir la démo](lien-vers-une-image-miniature.png)](https://drive.google.com/file/d/1imfk4rt4rfbUGRRtQblNCGTsbFMe0tCM/view?usp=sharing) -->
 
 La vidéo montre :
 
